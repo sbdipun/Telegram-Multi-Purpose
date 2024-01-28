@@ -4,4 +4,4 @@ pixeldrain
 python-dotenv
 python-telegram-bot
 telebot
-shutil
+
