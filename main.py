@@ -49,10 +49,6 @@ def renaming_check(old_file_name, new_file_name):
     print(f"Renaming '{old_file_name}' to '{new_file_name}' is possible.")
     return True
 
-# Example usage
-old_name = 'example_old.mkv'
-new_name = 'example_new.mkv'
-
 # Call the function with the old and new file names
 can_rename = renaming_check(old_name, new_name)
 
