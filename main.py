@@ -1,59 +1,156 @@
 import os
-import sys
-import asyncio
-import tgcrypto
-import pyrogram
 import requests
+import shutil
+from urllib.parse import urlparse
+import pixeldrain
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-API_ID = 7405235  # Replace with your TGCrypto API ID
-API_HASH = '5c9541eefe8452186e9649e2effc1f3f'  # Replace with your TGCrypto API Hash
 
-BOT_TOKEN = '6989567311:AAGQpZSTMgko2IpgLRJsCaIQIiALm1hgLzI'  # Replace with your Telegram bot token
-PIXELDRAIN_API_KEY = '60a0f36c-70fb-4f12-af49-8984ae2a9d78'  # Replace with your PixelDrain API key
-
-@pyrogram.Client.on_message(filters.command(['start', 'help']))
-async def start(client, message):
-    await message.reply_text(f"Welcome to the PixelDrain Upload Bot! Use /pixeldrain to upload files to PixelDrain.")
-
-@pyrogram.Client.on_message(filters.command(['pixeldrain']))
-async def pixeldrain(client, message):
-    # Get the file from the user
-    file_id = message.reply_to_message.document.file_id
-    file = await client.download_media(file_id)
-    # Generate a random filename
-    filename = 'temp_file' + str(os.getpid()) + '.bin'
-
-    # Upload the file to PixelDrain
-    headers = {
-        'Authorization': f'Basic {btoa(":"+PIXELDRAIN_API_KEY)}'
-    }
-
-    async with aiohttp.ClientSession() as session:
-        async with session.post(
-            'https://api.pixeldrain.com/v1/upload',
-            headers=headers,
-            data=file
-        ) as response:
-            if response.status == 20:
-                # Get the uploaded file's URL
-                data = await response.json()
-                url = data['url']
-
-                # Send the file URL to the user
-                await message.reply_text(f"File uploaded successfully!\n\nURL: {url}\n\nFile: {filename}")
-            else:
-                # Handle upload errors
-                error_msg = await response.text()
-                await message.reply_text(f"Error uploading the file:\n{error_msg}")
-
-    # Clean up the temporary file
-    os.remove(filename)
-
-app = pyrogram.Client(
-    "PixelDrain Bot",
-    api_id=API_ID,
-    api_hash=API_HASH,
-    bot_token=BOT_TOKEN
+Bot = Client(
+    "Pixeldrain-Bot",
+    bot_token = os.environ["BOT_TOKEN"],
+    api_id = int(os.environ["API_ID"]),
+    api_hash = os.environ["API_HASH"]
 )
 
-app.run()
+
+@Bot.on_message(filters.private & filters.command("start"))
+async def start(bot, update):
+    await update.reply_text(
+        text=f"Hello {update.from_user.mention}, Please send a media file or a URL to upload into pixeldrain.\n\nMade with love by DcOoL",
+        disable_web_page_preview=True,
+        quote=True
+    )
+
+@Bot.on_message(filters.private & (filters.media | filters.text))
+async def media_filter(bot, update):
+    logs = []
+    message = await update.reply_text(
+        text="Processing...",
+        quote=True,
+        disable_web_page_preview=True
+    )
+    
+    try:
+        # check if the message is a media file or a URL
+        if update.media:
+            media = await update.download()
+        elif update.text:
+            url = update.text
+            parsed_url = urlparse(url)
+            if not parsed_url.scheme or parsed_url.scheme not in ["http", "https"]:
+                await message.edit_text(
+                    text="Invalid URL format.",
+                    disable_web_page_preview=True
+                )
+                return
+            response = requests.get(url, stream=True)
+            if response.status_code != 200:
+                await message.edit_text(
+                    text=f"Error {response.status_code}:- {response.reason}",
+                    disable_web_page_preview=True
+                )
+                return
+            media = response.content
+            filename = parsed_url.path.split("/")[-1]
+            if not filename:
+                await message.edit_text(
+                    text="Invalid URL format.",
+                    disable_web_page_preview=True
+                )
+                return
+            with open(filename, "wb") as f:
+                try:
+                    f.write(media)
+                    logs.append("Download Successfully")
+                except TypeError as e:
+                    if "embedded null byte" in str(e):
+                        logs.append("Download Successfully (with null bytes)")
+                    else:
+                        raise e
+        else:
+            await message.edit_text(
+                text="Invalid input format.",
+                disable_web_page_preview=True
+            )
+            return
+        
+        # upload
+        try:
+            await message.edit_text(
+                text="Uploading...",
+                disable_web_page_preview=True
+            )
+        except:
+            pass
+        response = pixeldrain.upload_file(media)
+        
+        try:
+            os.remove(media)
+        except:
+            pass
+        try:
+            await message.edit_text(
+                text="Uploaded Successfully!",
+                disable_web_page_preview=True
+            )
+        except:
+            pass
+        logs.append("Upload Successfully")
+        
+        # after upload
+        if response["success"]:
+            logs.append("Success is True")
+            data = pixeldrain.info(response["id"])
+        else:
+            logs.append("Success is False")
+            value = response["value"]
+            error = response["message"]
+            await message.edit_text(
+                text=f"Error {value}:- {error}",
+                disable_web_page_preview=True
+            )
+            return
+    except Exception as error:
+        await message.edit_text(
+            text=f"Error :- {error}"+"\n\n"+'\n'.join(logs),
+            disable_web_page_preview=True
+        )
+        return
+# pixeldrain data
+    text = f"File Name: {data['name']}" + "\n"
+    text += f"Download Page: https://pixeldrain.com/u/{data['id']}" + "\n"
+    text += f"Direct Download Link: https://pixeldrain.com/api/file/{data['id']}" + "\n"
+    text += f"Upload Date: {data['date_upload']}" + "\n"
+    text += f"Last View Date: {data['date_last_view']}" + "\n"
+    text += f"Size: {data['size']}" + "\n"
+    text += f"Total Views: {data['views']}" + "\n"
+    text += f"Bandwidth Used: {data['bandwidth_used']}" + "\n"
+    text += f"Mime Type: {data['mime_type']}"
+    reply_markup = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    text="Open Link",
+                    url=f"https://pixeldrain.com/u/{data['id']}"
+                ),
+                InlineKeyboardButton(
+                    text="Share Link",
+                    url=f"https://telegram.me/share/url?url=https://pixeldrain.com/u/{data['id']}"
+                )
+            ],
+            [
+                InlineKeyboardButton(text="Join Updates Channel", url="https://telegram.me/kimgsb007")
+            ]
+        ]
+    )
+    
+    await message.edit_text(
+        text=text,
+        reply_markup=reply_markup,
+        disable_web_page_preview=True
+    )
+
+
+Bot.run()
