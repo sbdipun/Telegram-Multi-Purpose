@@ -1,9 +1,7 @@
 import os
 import pixeldrain
 from pyrogram import Client, filters
-from dotenv import python-dotenv
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-load(dotenv)
 
 
 Bot = Client(
