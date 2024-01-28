@@ -32,8 +32,37 @@ async def media_filter(bot, update):
     await update.reply_text("Please send the new filename for your file (with the proper extension).", quote=True)
     temporary_storage[update.from_user.id + "_state"] = States.RENAMING
 
-def renaming_check(_, message):
-    return temporary_storage.get(message.from_user.id + "_state") == States.RENAMING
+def renaming_check(old_file_name, new_file_name):
+    # Check if the old file exists
+    if not os.path.isfile(old_file_name):
+        print(f"Error: The file '{old_file_name}' does not exist.")
+        return False
+    
+    # Check if the new file name already exists to avoid overwriting
+    if os.path.isfile(new_file_name):
+        print(f"Error: The file '{new_file_name}' already exists.")
+        return False
+    
+    # Additional checks can be added here (e.g., file name restrictions, permissions, etc.)
+    
+    # If all checks pass, renaming is assumed to be possible
+    print(f"Renaming '{old_file_name}' to '{new_file_name}' is possible.")
+    return True
+
+# Example usage
+old_name = 'example_old.mkv'
+new_name = 'example_new.mkv'
+
+# Call the function with the old and new file names
+can_rename = renaming_check(old_name, new_name)
+
+if can_rename:
+    # Proceed with the renaming
+    os.rename(old_name, new_name)
+    print(f"File renamed successfully to '{new_name}'.")
+else:
+    # Handle the failure case
+    print(f"File renaming was not performed.")
 
 @Bot.on_message(filters.private & filters.text & filters.create(renaming_check))
 async def get_new_filename(bot, update):
