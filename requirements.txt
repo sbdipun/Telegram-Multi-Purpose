@@ -5,3 +5,5 @@ python-dotenv
 python-telegram-bot
 telebot
 enum34
+urllib
+shutil
