@@ -4,3 +4,4 @@ pixeldrain
 python-dotenv
 python-telegram-bot
 telebot
+enum34
