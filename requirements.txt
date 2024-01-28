@@ -4,4 +4,6 @@ pixeldrain
 python-dotenv
 python-telegram-bot
 telebot
+asyncio
+tgcrypto
 
