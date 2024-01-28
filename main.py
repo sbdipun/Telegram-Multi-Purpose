@@ -32,7 +32,10 @@ async def media_filter(bot, update):
     await update.reply_text("Please send the new filename for your file (with the proper extension).", quote=True)
     temporary_storage[update.from_user.id + "_state"] = States.RENAMING
 
-@Bot.on_message(filters.private & filters.text & filters.create(lambda _, , query: temporary_storage.get(query.from_user.id + "_state") == States.RENAMING))
+def renaming_check(_, message):
+    return temporary_storage.get(message.from_user.id + "_state") == States.RENAMING
+
+@Bot.on_message(filters.private & filters.text & filters.create(renaming_check))
 async def get_new_filename(bot, update):
     media = temporary_storage[update.from_user.id]
     new_name = update.text
