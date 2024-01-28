@@ -61,7 +61,14 @@ async def media_filter(bot, update):
                 )
                 return
             with open(filename, "wb") as f:
-                shutil.copyfileobj(response.raw, f)
+                try:
+                    f.write(media)
+                    logs.append("Download Successfully")
+                except TypeError as e:
+                    if "embedded null byte" in str(e):
+                        logs.append("Download Successfully (with null bytes)")
+                    else:
+                        raise e
         else:
             await message.edit_text(
                 text="Invalid input format.",
@@ -112,7 +119,6 @@ async def media_filter(bot, update):
         )
         return
 
-    
     # pixeldrain data
     text = f"**File Name:** `{data['name']}`" + "\n"
     text += f"**Download Page:** `https://pixeldrain.com/u/{data['id']}`" + "\n"
