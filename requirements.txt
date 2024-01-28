@@ -4,6 +4,4 @@ pixeldrain
 python-dotenv
 python-telegram-bot
 telebot
-enum34
-urllib.parse
 shutil
