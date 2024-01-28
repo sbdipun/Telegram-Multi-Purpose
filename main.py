@@ -1,7 +1,9 @@
 import os
 import pixeldrain
 from pyrogram import Client, filters
+from dotenv import python-dotenv
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+load(dotenv)
 
 
 Bot = Client(
@@ -15,7 +17,7 @@ Bot = Client(
 @Bot.on_message(filters.private & filters.command("start"))
 async def start(bot, update):
     await update.reply_text(
-        text=f"Hello {update.from_user.mention}, Please send a media for pixeldrain.com stream link.\n\nMade by @FayasNoushad",
+        text=f"Hello!! {update.from_user.mention}, Please send a file to Upload in PixelDrain.\n\nThis Is Made With Love By DcOoL ❤️❤️❤️",
         disable_web_page_preview=True,
         quote=True
     )
