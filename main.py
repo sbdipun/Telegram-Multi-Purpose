@@ -5,9 +5,10 @@ import tgcrypto
 import pyrogram
 import requests
 
-bot_token = os.environ["BOT_TOKEN"],
-api_id = int(os.environ["API_ID"]),
-api_hash = os.environ["API_HASH"]n
+API_ID = 7405235  # Replace with your TGCrypto API ID
+API_HASH = '5c9541eefe8452186e9649e2effc1f3f'  # Replace with your TGCrypto API Hash
+
+BOT_TOKEN = '6989567311:AAGQpZSTMgko2IpgLRJsCaIQIiALm1hgLzI'  # Replace with your Telegram bot token
 PIXELDRAIN_API_KEY = '60a0f36c-70fb-4f12-af49-8984ae2a9d78'  # Replace with your PixelDrain API key
 
 @pyrogram.Client.on_message(filters.command(['start', 'help']))
